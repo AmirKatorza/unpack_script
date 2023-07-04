@@ -5,12 +5,12 @@ verbose=false
 recursive=false
 decompress_count=0 # Global Var
 
-# Function to decompress a file
+# Decompress archive according to file type
 function decompress_file() {
   local file="$1"
   local fileType
 
-  # Get the compression type of the file
+  # Get file compression type 
   fileType=$(file -b "$file" | awk '{print $1}')
 
   # Define an associative array mapping compression types to decompression commands
@@ -22,7 +22,7 @@ function decompress_file() {
     ["POSIX"]="tar -xf"    
   )
 
-  # Get the decompression command for the compression type
+  # Get decompression command from associative array
   local command=${decompress_commands[$fileType]}
 
   # If the compression type is recognized, decompress the file
@@ -40,17 +40,20 @@ function decompress_file() {
   fi  
 }
 
-# Function to traverse a directory recursively and decompress all archives in it
-function traverse_directory() {
-  local dir="$1"
+# Get all files from directory and subdirectories recursively and decompress archives.
+function recursive_decomp() {
+    local dir=$1
+    local option=$2
 
-  while IFS= read -r -d '' file; do
-    decompress_file "$file"
-  done << (find "$dir" -type f -print0)
+    if [[ $option -eq 1 ]]; then
+        find $dir -type f -print0 | xargs -0 -n 1 decompress_file
+    else
+        ls $dir | xargs -n 1 decompress_file
+    fi
 }
 
-# Parse command line arguments
-while getopts "rv" opt; do
+# Parse command line flags
+while getopts "rv:" opt; do
   case $opt in
     r)
       recursive=true
@@ -68,13 +71,15 @@ shift $((OPTIND-1))
 
 # Decompress each file in the input list
 for file in "$@"; do
-  if [[ -d "$file" ]]; then
-    if $recursive; then
-      traverse_directory "$file"
+    if [[ -d "$file" ]]; then
+        if $recursive; then
+            recursive_decomp $file 1
+        else
+            recursive_decomp $file 0
+        fi
+    elif [[ -f "$file" ]]; then
+        decompress_file $file
     fi
-  elif [[ -f "$file" ]]; then
-    decompress_file "$file"
-  fi
 done
 
 # Print the number of archives decompressed and the number of files not decompressed
