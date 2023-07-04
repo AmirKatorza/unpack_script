@@ -19,7 +19,7 @@ function decompress_file() {
     ["bzip2"]="bunzip2"
     ["Zip"]="unzip"
     ["compress'd"]="uncompress"
-    ["POSIX"]="tar -xf"    
+    ["POSIX"]="tar -xvf"    
   )
 
   # Get decompression command from associative array
@@ -28,7 +28,7 @@ function decompress_file() {
   # If the compression type is recognized, decompress the file
   if [[ -n $command ]]; then
     if $command -f "$file"; then  # Added the -f option to force overwrite
-      ((decompress_count++))
+      ((decompress_count++))      
       if "$verbose"; then
         echo "Unpacking $file"
       fi
@@ -41,17 +41,25 @@ function decompress_file() {
 }
 
 # Get all files from directory and subdirectories recursively and decompress archives.
-function recursive_decomp() {
+function decompress_dir() {
   local dir=$1
   local option=$2
 
   if [[ $option -eq 1 ]]; then
-    find "$dir" -type f -print0 | while IFS= read -r -d '' file; do
-      decompress_file "$file"
-    done
+    while IFS= read -r -d '' file; do
+        decompress_file "$file"
+    done < <(find "$dir" -type f -print0)
+    # find "$dir" -type f -print0 | while IFS= read -r -d '' file; do
+    #   decompress_file "$file"
+    # done     
   else
-    ls "$dir" | while IFS= read -r file; do
-      decompress_file "$dir/$file"
+    for file in "$dir"/*; do
+        if [[ -f "$file" ]]; then
+            decompress_file "$file"
+        fi
+    done
+    # ls "$dir" | while IFS='' read -r file; do
+    #   decompress_file "$dir/$file"
     done
   fi
 }
@@ -77,9 +85,9 @@ shift $((OPTIND-1))
 for file in "$@"; do
   if [[ -d "$file" ]]; then
     if "$recursive"; then
-      recursive_decomp "$file" 1
+      decompress_dir "$file" 1
     else
-      recursive_decomp "$file" 0
+      decompress_dir "$file" 0
     fi
   elif [[ -f "$file" ]]; then
     decompress_file "$file"
