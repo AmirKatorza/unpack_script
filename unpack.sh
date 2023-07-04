@@ -27,33 +27,37 @@ function decompress_file() {
 
   # If the compression type is recognized, decompress the file
   if [[ -n $command ]]; then
-    if $command "$file"; then
-      ((decompress_count))
-      if $verbose; then
+    if "$command" "$file"; then
+      ((decompress_count++))
+      if "$verbose"; then
         echo "Unpacking $file"
       fi
-    fi    
-  else
-    if $verbose; then
-        echo "Ignoring $file"
     fi
-  fi  
+  else
+    if "$verbose"; then
+      echo "Ignoring $file"
+    fi
+  fi
 }
 
 # Get all files from directory and subdirectories recursively and decompress archives.
 function recursive_decomp() {
-    local dir=$1
-    local option=$2
+  local dir=$1
+  local option=$2
 
-    if [[ $option -eq 1 ]]; then
-        find $dir -type f -print0 | xargs -0 -n 1 decompress_file
-    else
-        ls $dir | xargs -n 1 decompress_file
-    fi
+  if [[ $option -eq 1 ]]; then
+    find "$dir" -type f -print0 | while IFS= read -r -d '' file; do
+      decompress_file "$file"
+    done
+  else
+    ls "$dir" | while IFS= read -r file; do
+      decompress_file "$dir/$file"
+    done
+  fi
 }
 
 # Parse command line flags
-while getopts "rv:" opt; do
+while getopts "rv" opt; do
   case $opt in
     r)
       recursive=true
@@ -71,16 +75,16 @@ shift $((OPTIND-1))
 
 # Decompress each file in the input list
 for file in "$@"; do
-    if [[ -d "$file" ]]; then
-        if $recursive; then
-            recursive_decomp $file 1
-        else
-            recursive_decomp $file 0
-        fi
-    elif [[ -f "$file" ]]; then
-        decompress_file $file
+  if [[ -d "$file" ]]; then
+    if "$recursive"; then
+      recursive_decomp "$file" 1
+    else
+      recursive_decomp "$file" 0
     fi
+  elif [[ -f "$file" ]]; then
+    decompress_file "$file"
+  fi
 done
 
-# Print the number of archives decompressed and the number of files not decompressed
-echo "Decompressed $decompressed archive(s)"
+# Print the number of archives decompressed
+echo "Decompressed $decompress_count archive(s)"
