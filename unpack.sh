@@ -18,7 +18,7 @@ function decompress_file() {
     ["gzip"]="gunzip"
     ["bzip2"]="bunzip2"
     ["Zip"]="unzip"
-    ["compress'd"]="tar -xf"
+    ["compress'd"]="uncompress"
     ["POSIX"]="tar -xf"    
   )
 
@@ -27,7 +27,7 @@ function decompress_file() {
 
   # If the compression type is recognized, decompress the file
   if [[ -n $command ]]; then
-    if "$command" "$file"; then
+    if $command -f "$file"; then  # Added the -f option to force overwrite
       ((decompress_count++))
       if "$verbose"; then
         echo "Unpacking $file"
