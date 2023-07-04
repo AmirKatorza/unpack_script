@@ -14,12 +14,11 @@ function decompress_file() {
   fileType=$(file -b "$file" | awk '{print $1}')
 
   # Define an associative array mapping compression types to decompression commands
+  # You can add more compressed file type here!!!
   declare -A decompress_commands=(
     ["gzip"]="gunzip"
     ["bzip2"]="bunzip2"
-    ["Zip"]="unzip"
-    ["compress'd"]="uncompress"
-    ["POSIX"]="tar -xvf"    
+    ["Zip"]="unzip"    
   )
 
   # Get decompression command from associative array
@@ -40,26 +39,26 @@ function decompress_file() {
   fi
 }
 
-# Get all files from directory and subdirectories recursively and decompress archives.
+# Get all files from directory and optionally subdirectories recursively and decompress archives.
 function decompress_dir() {
   local dir=$1
-  local option=$2
+  local recursive=$2
 
-  if [[ $option -eq 1 ]]; then
+  if [[ $recursive -eq 1 ]]; then
+    If recursive option is set, find all files in directory and subdirectories
     while IFS= read -r -d '' file; do
         decompress_file "$file"
     done < <(find "$dir" -type f -print0)
+    # This is bad practice for this scenario - kept it anyway for future refrence!
     # find "$dir" -type f -print0 | while IFS= read -r -d '' file; do
     #   decompress_file "$file"
-    # done     
+    # done    
   else
+    # If recursive option is not set, only process files in the given directory
     for file in "$dir"/*; do
-        if [[ -f "$file" ]]; then
-            decompress_file "$file"
-        fi
-    done
-    # ls "$dir" | while IFS='' read -r file; do
-    #   decompress_file "$dir/$file"
+      if [[ -f "$file" ]]; then
+        decompress_file "$file"
+      fi
     done
   fi
 }
