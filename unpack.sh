@@ -3,7 +3,7 @@
 # Initialize variables
 verbose=false
 recursive=false
-decompress_count=0 # Global Var
+decompress_count=0 
 
 # Decompress archive according to file type
 function decompress_file() {
@@ -45,21 +45,16 @@ function decompress_dir() {
   local recursive=$2
 
   if [[ $recursive -eq 1 ]]; then
-    If recursive option is set, find all files in directory and subdirectories
+    # If recursive option is set, find all files in directory and subdirectories
     while IFS= read -r -d '' file; do
         decompress_file "$file"
-    done < <(find "$dir" -type f -print0)
-    # This is bad practice for this scenario - kept it anyway for future refrence!
-    # find "$dir" -type f -print0 | while IFS= read -r -d '' file; do
-    #   decompress_file "$file"
-    # done    
+    done < <(find "$dir" -type f -print0)    
   else
     # If recursive option is not set, only process files in the given directory
-    for file in "$dir"/*; do
-      if [[ -f "$file" ]]; then
+    while IFS= read -r -d '' file; do
         decompress_file "$file"
-      fi
-    done
+    done < <(find "$dir" -maxdepth 1 -type f -print0
+)    
   fi
 }
 
