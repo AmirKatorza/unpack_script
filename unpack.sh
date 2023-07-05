@@ -5,6 +5,23 @@ verbose=false
 recursive=false
 decompress_count=0 
 
+# Parse command line flags
+while getopts "rv" opt; do
+  case $opt in
+    r)
+      recursive=true
+      ;;
+    v)
+      verbose=true
+      ;;
+    *)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND-1))
+
 # Decompress archive according to file type
 function decompress_file() {
   local file="$1"
@@ -14,7 +31,7 @@ function decompress_file() {
   fileType=$(file -b "$file" | awk '{print $1}')
 
   # Define an associative array mapping compression types to decompression commands
-  # You can add more compressed file type here!!!
+  # You can add more compressed file types here!!!
   declare -A decompress_commands=(
     ["gzip"]="gunzip"
     ["bzip2"]="bunzip2"
@@ -57,23 +74,6 @@ function decompress_dir() {
 )    
   fi
 }
-
-# Parse command line flags
-while getopts "rv" opt; do
-  case $opt in
-    r)
-      recursive=true
-      ;;
-    v)
-      verbose=true
-      ;;
-    *)
-      echo "Invalid option: -$OPTARG" >&2
-      exit 1
-      ;;
-  esac
-done
-shift $((OPTIND-1))
 
 # Decompress each file in the input list
 for file in "$@"; do
